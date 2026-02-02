@@ -198,11 +198,8 @@ if uploaded_file is not None:
             # Provide download button
             with open(output_path, "rb") as file:
                 btn = st.download_button(
-                        label="DOWNLOAD_PROCESSED_VIDEO",
-                        data=file,
-                        file_name="processed_video.mp4",
-                        mime="video/mp4"
-                    )
+                    label="DOWNLOAD_PROCESSED_VIDEO",
+                    data=file,
                     file_name="processed_video.mp4",
                     mime="video/mp4"
                 )
