@@ -176,6 +176,18 @@ if uploaded_file is not None:
             track_history = defaultdict(lambda: [])
 
             while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # --- 이 부분을 추가하세요 ---
+            # 영상을 640px 너비로 리사이징하여 연산량 감소
+            analysis_frame = cv2.resize(frame, (640, int(height * (640 / width))))
+            # --------------------------
+
+            # 아래 model.track의 대상을 frame에서 analysis_frame으로 변경
+            results = model.track(analysis_frame, persist=True, conf=confidence_threshold)
+            while cap.isOpened():
                 ret, frame = cap.read()
                 if not ret:
                     break
@@ -198,7 +210,7 @@ if uploaded_file is not None:
                         track.append((float(x), float(y))) # 중심점 추가
                         
                         # 궤적 길이 조절 (최근 30프레임 흔적 유지)
-                        if len(track) > 30:
+                        if len(track) > 20:
                             track.pop(0)
 
                         # 이동 경로 선(Line) 그리기
