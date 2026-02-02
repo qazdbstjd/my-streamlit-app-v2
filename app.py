@@ -9,22 +9,64 @@ import time
 st.set_page_config(page_title="ObjectTrace - Created by Yunseong", layout="wide")
 
 st.markdown("""
-<style>
-.main {
-    background-color: #f0f2f6;
-}
-h1 {
-    color: #1f77b4;
-}
-.stButton>button {
-    background-color: #1f77b4;
-    color: white;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    /* 폰트를 코딩 폰트 느낌으로 통일 */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+    
+    html, body, [class*="css"], .main {
+        font-family: 'Roboto Mono', monospace !important;
+        background-color: #ffffff; /* 흰색 배경 */
+        color: #0000ff; /* 파란색 글자 */
+    }
+
+    /* 사이드바 스타일 */
+    [data-testid="stSidebar"] {
+        background-color: #0000ff !important; /* 파란색 배경 */
+        border-right: 2px solid #0000ff;
+    }
+    [data-testid="stSidebar"] * {
+        color: #ffffff !important; /* 사이드바 내부 흰색 글자 */
+    }
+
+    /* 메인 타이틀 (강조) */
+    .stHeading h1 {
+        background-color: #0000ff; /* 배경 파랑 */
+        color: #ffffff !important; /* 글자 흰색 */
+        padding: 10px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: -1px;
+    }
+
+    /* 버튼 스타일 (반전 효과) */
+    .stButton>button {
+        border: 2px solid #0000ff !important;
+        background-color: #ffffff !important;
+        color: #0000ff !important;
+        border-radius: 0px !important;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .stButton>button:hover {
+        background-color: #0000ff !important;
+        color: #ffffff !important;
+    }
+
+    /* 슬라이더 및 입력창 컬러 */
+    .stSlider [data-baseweb="slider"] {
+        background-color: #0000ff;
+    }
+    
+    /* 구분선 스타일 */
+    hr {
+        border: none;
+        border-top: 3px dashed #0000ff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
-st.title("📹 Intelligent Video Analysis Tool")
+st.title("📹 ObjectTrace - Created by Yunseong")
 st.write("Upload a video to detect moving objects (Person, Car, etc.) using YOLOv8.")
 
 # --- Sidebar ---
