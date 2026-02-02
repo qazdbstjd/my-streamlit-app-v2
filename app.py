@@ -5,6 +5,7 @@ import os
 from ultralytics import YOLO
 import time
 import numpy as np
+from collections import defaultdict
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Created by Yun Seong #1 : 📹OBJECT TRACE", layout="wide")
@@ -143,7 +144,7 @@ with col_right:
     status_text = st.empty()
     status_text.info("SYSTEM_READY: WAITING FOR INPUT...")
 
-# 6. 분석 엔진 실행
+# 6. 분석 엔진 실행 (궤적 추적 기능 통합)
 if uploaded_file is not None:
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
@@ -162,4 +163,78 @@ if uploaded_file is not None:
             fps = int(cap.get(cv2.CAP_PROP_FPS))
             
             output_path = os.path.join(tempfile.gettempdir(), "output_annotated.mp4")
-            fourcc = cv2.VideoWriter_fourcc
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
+            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+            st_frame = st.empty() 
+            progress_bar = st.progress(0)
+            
+            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            curr_frame = 0
+
+            # 궤적 저장을 위한 딕셔너리 (ID별 좌표 리스트)
+            track_history = defaultdict(lambda: [])
+
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+                # 객체 추적 실행 (persist=True 필수)
+                results = model.track(frame, persist=True, conf=confidence_threshold)
+                
+                # YOLO 기본 바운딩 박스 그리기
+                annotated_frame = results[0].plot() 
+
+                # 궤적 시각화 로직 시작
+                if results[0].boxes.id is not None:
+                    # 박스 정보(xywh)와 할당된 ID 추출
+                    boxes = results[0].boxes.xywh.cpu().numpy()
+                    track_ids = results[0].boxes.id.int().cpu().tolist()
+
+                    for box, track_id in zip(boxes, track_ids):
+                        x, y, w, h = box
+                        track = track_history[track_id]
+                        track.append((float(x), float(y))) # 중심점 추가
+                        
+                        # 궤적 길이 조절 (최근 30프레임 흔적 유지)
+                        if len(track) > 30:
+                            track.pop(0)
+
+                        # 이동 경로 선(Line) 그리기
+                        points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                        cv2.polylines(annotated_frame, [points], isClosed=False, color=(255, 255, 0), thickness=2)
+                        
+                        # 현재 위치 점(Dot) 찍기
+                        cv2.circle(annotated_frame, (int(x), int(y)), 4, (0, 0, 255), -1)
+
+                # 분석 프레임 비디오 파일로 저장
+                out.write(annotated_frame)
+
+                # 메인 화면 실시간 렌더링
+                with col_left:
+                    st_frame.image(cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB), channels="RGB", use_container_width=True)
+                
+                # 우측 지표 실시간 업데이트
+                with col_right:
+                    obj_count = len(results[0].boxes) if results[0].boxes.id is not None else 0
+                    metric_placeholder.metric("ENTITIES_DETECTED", f"{obj_count:02d}", delta="ACTIVE")
+                
+                # 진행률 표시
+                curr_frame += 1
+                if frame_count > 0:
+                    progress_bar.progress(min(curr_frame / frame_count, 1.0))
+
+            cap.release()
+            out.release()
+            
+            status_text.success("SUCCESS: ANALYSIS_COMPLETE")
+            
+            # 분석 완료 비디오 다운로드 링크 제공
+            with open(output_path, "rb") as file:
+                st.download_button(
+                    label="DOWNLOAD_PROCESSED_VIDEO",
+                    data=file,
+                    file_name="processed_video.mp4",
+                    mime="video/mp4"
+                )
