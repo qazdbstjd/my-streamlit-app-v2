@@ -5,7 +5,6 @@ import os
 from ultralytics import YOLO
 import time
 import numpy as np
-from collections import defaultdict
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Created by Yun Seong #1 : 📹OBJECT TRACE", layout="wide")
@@ -13,20 +12,29 @@ st.set_page_config(page_title="Created by Yun Seong #1 : 📹OBJECT TRACE", layo
 # 2. 강력한 레트로 브루탈리즘 CSS 적용
 st.markdown("""
     <style>
+    /* 1. Source Code Pro 폰트 불러오기 */
     @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700;900&display=swap');
+
+    /* 2. 전체 요소에 적용 */
     html, body, [class*="css"], .main, stMarkdown, h1, p, button {
         font-family: 'Source Code Pro', monospace !important;
     }
+
+    /* 사이드바 스타일링 */
     [data-testid="stSidebar"] {
         background-color: #000000 !important;
         border-right: 3px solid #00ffff !important;
     }
+
+    /* 모든 텍스트 컬러를 사이언(Cyan)으로 고정 */
     h1, h2, h3, h4, p, label, .stMarkdown, span, [data-testid="stMetricLabel"] {
         color: #00ffff !important;
         text-transform: uppercase !important;
     }
+
+    /* 메인 타이틀 박스 스타일 */
     .title-container {
-        border: 2px solid #00ffff;
+        border: 4px solid #00ffff;
         padding: 20px;
         margin-bottom: 30px;
         display: inline-block;
@@ -34,11 +42,13 @@ st.markdown("""
     }
     .title-main {
         font-size: 40px !important;
-        font-weight: 500 !important;
+        font-weight: 900 !important;
         line-height: 1.2;
         margin: 0;
         color: #00ffff !important;
     }
+
+    /* 버튼 스타일 (반전 효과) */
     div.stButton > button:first-child {
         width: 100%;
         background-color: #000000 !important;
@@ -54,6 +64,8 @@ st.markdown("""
         background-color: #00ffff !important;
         color: #000000 !important;
     }
+
+    /* 메트릭 박스 커스텀 */
     [data-testid="stMetric"] {
         border: 2px solid #00ffff;
         padding: 15px;
@@ -62,16 +74,31 @@ st.markdown("""
     [data-testid="stMetricValue"] {
         color: #00ffff !important;
     }
+
+    /* 업로더 및 슬라이더 스타일 */
     .stFileUploader, .stSlider {
         border: 1px dashed #00ffff;
         padding: 10px;
     }
+    
+    /* 구분선 */
     hr {
         border-top: 4px double #00ffff !important;
     }
+
+    /* Success/Error override */
+    .stAlert {
+        background-color: #000000 !important;
+        border: 1px solid #00ffff !important;
+        color: #00ffff !important;
+    }
+
+    /* 4. 마우스 커서 십자선 및 반전 설정 */
     html, body, .main {
         cursor: crosshair !important;
     }
+
+    /* 클릭 요소 위에 있을 때 커서 반전 효과 */
     button, a, [data-testid="stFileUploadDropzone"], .stSlider {
         mix-blend-mode: difference; 
         cursor: crosshair !important;
@@ -91,6 +118,7 @@ with st.sidebar:
     confidence_threshold = st.slider("THRESHOLD", 0.0, 1.0, 0.4, 0.05)
     st.write("---")
     st.markdown("### STATUS: ACTIVE")
+
     try:
         model = load_model(model_type)
         st.success(f"SUCCESS: {model_type} LOADED")
@@ -127,56 +155,36 @@ if uploaded_file is not None:
     with col_right:
         if st.button("START ANALYSIS"):
             status_text.warning("ANALYZING...")
+            
             cap = cv2.VideoCapture(video_path)
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = int(cap.get(cv2.CAP_PROP_FPS))
             
-            # 분석 속도를 위해 출력 해상도를 640으로 고정
-            target_width = 640
-            target_height = int(height * (target_width / width))
-            
             output_path = os.path.join(tempfile.gettempdir(), "output_annotated.mp4")
             fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
-            out = cv2.VideoWriter(output_path, fourcc, fps, (target_width, target_height))
+            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
             st_frame = st.empty() 
             progress_bar = st.progress(0)
+            
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             curr_frame = 0
-            track_history = defaultdict(lambda: [])
 
             while cap.isOpened():
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-                # [최적화] 영상을 640px 너비로 리사이징하여 연산량 감소
-                analysis_frame = cv2.resize(frame, (target_width, target_height))
-
-                # 객체 추적 실행
-                results = model.track(analysis_frame, persist=True, conf=confidence_threshold)
+                results = model(frame, conf=confidence_threshold)
                 annotated_frame = results[0].plot() 
-
-                # 궤적 시각화
-                if results[0].boxes.id is not None:
-                    boxes = results[0].boxes.xywh.cpu().numpy()
-                    track_ids = results[0].boxes.id.int().cpu().tolist()
-
-                    for box, track_id in zip(boxes, track_ids):
-                        x, y, w, h = box
-                        track = track_history[track_id]
-                        track.append((float(x), float(y)))
-                        if len(track) > 20: # 궤적 길이 유지
-                            track.pop(0)
-
                 out.write(annotated_frame)
 
                 with col_left:
                     st_frame.image(cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB), channels="RGB", use_container_width=True)
                 
                 with col_right:
-                    obj_count = len(results[0].boxes) if results[0].boxes.id is not None else 0
+                    obj_count = len(results[0].boxes)
                     metric_placeholder.metric("ENTITIES_DETECTED", f"{obj_count:02d}", delta="ACTIVE")
                 
                 curr_frame += 1
@@ -185,6 +193,7 @@ if uploaded_file is not None:
 
             cap.release()
             out.release()
+            
             status_text.success("SUCCESS: ANALYSIS_COMPLETE")
             
             with open(output_path, "rb") as file:
