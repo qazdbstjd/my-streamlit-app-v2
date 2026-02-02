@@ -170,11 +170,6 @@ if uploaded_file is not None:
                         if len(track) > 20: # 궤적 길이 유지
                             track.pop(0)
 
-                        # 이동 경로 선 및 점 그리기
-                        points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                        cv2.polylines(annotated_frame, [points], isClosed=False, color=(255, 255, 0), thickness=2)
-                        cv2.circle(annotated_frame, (int(x), int(y)), 4, (0, 0, 255), -1)
-
                 out.write(annotated_frame)
 
                 with col_left:
