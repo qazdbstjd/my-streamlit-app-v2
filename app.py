@@ -116,7 +116,7 @@ with st.sidebar:
         st.error(f"ERROR: {e}")
 
 # 5. 메인 화면 구성
-st.markdown('<div class="title-container"><p class="title-main">S 4 A D # 3<br>OBJECT TRACE</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="title-container"><p class="title-main">Created by Yun Seong #1 : 📹OBJECT TRACE</p></div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns([3, 1])
 
