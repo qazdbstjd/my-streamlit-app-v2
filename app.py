@@ -6,7 +6,7 @@ from ultralytics import YOLO
 import time
 import numpy as np
 
-# 1. 페이지 설정 (블랙 테마 유지)
+# 1. 페이지 설정
 st.set_page_config(page_title="Created by Yun Seong #1 : 📹OBJECT TRACE", layout="wide")
 
 # 2. 강력한 레트로 브루탈리즘 CSS 적용
@@ -27,12 +27,12 @@ st.markdown("""
     }
 
     /* 모든 텍스트 컬러를 사이언(Cyan)으로 고정 */
-    h1, h2, h3, h4, p, label, .stMarkdown, span, .stMetric {
+    h1, h2, h3, h4, p, label, .stMarkdown, span, [data-testid="stMetricLabel"] {
         color: #00ffff !important;
         text-transform: uppercase !important;
     }
 
-    /* 메인 타이틀 박스 스타일 (포스터 느낌) */
+    /* 메인 타이틀 박스 스타일 */
     .title-container {
         border: 4px solid #00ffff;
         padding: 20px;
@@ -41,8 +41,8 @@ st.markdown("""
         background-color: #000000;
     }
     .title-main {
-        font-size: 50px !important;
-        font-weight: 800 !important;
+        font-size: 40px !important;
+        font-weight: 900 !important;
         line-height: 1.2;
         margin: 0;
         color: #00ffff !important;
@@ -92,24 +92,19 @@ st.markdown("""
         border: 1px solid #00ffff !important;
         color: #00ffff !important;
     }
-   /* 4. 마우스 커서 십자선 및 반전 설정 */
+
+    /* 4. 마우스 커서 십자선 및 반전 설정 */
     html, body, .main {
         cursor: crosshair !important;
     }
 
     /* 클릭 요소 위에 있을 때 커서 반전 효과 */
     button, a, [data-testid="stFileUploadDropzone"], .stSlider {
-        /* 커서가 가리키는 지점의 색상을 배경과 반전시킴 */
         mix-blend-mode: difference; 
         cursor: crosshair !important;
     }
-
-    /* 버튼 호버 시 스타일 강화 */
-    .stButton>button:hover {
-        background-color: #00ffff !important;
-        color: #000000 !important;
-        /* 버튼 배경이 밝아지면 커서가 검게 보임 */
-    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # 3. 모델 로드 (캐시 사용)
 @st.cache_resource
@@ -119,8 +114,8 @@ def load_model(model_name):
 # 4. 사이드바 제어
 with st.sidebar:
     st.markdown("### 01. SETUP")
-    model_type = st.sidebar.selectbox("MODEL_SELECT", ["yolov8n.pt", "yolov8s.pt", "yolov8m.pt"])
-    confidence_threshold = st.sidebar.slider("THRESHOLD", 0.0, 1.0, 0.4, 0.05)
+    model_type = st.selectbox("MODEL_SELECT", ["yolov8n.pt", "yolov8s.pt", "yolov8m.pt"])
+    confidence_threshold = st.slider("THRESHOLD", 0.0, 1.0, 0.4, 0.05)
     st.write("---")
     st.markdown("### STATUS: ACTIVE")
 
@@ -131,7 +126,7 @@ with st.sidebar:
         st.error(f"ERROR: {e}")
 
 # 5. 메인 화면 구성
-st.markdown('<div class="title-container"><p class="title-main">Created by Yun Seong #1 : 📹OBJECT TRACE</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="title-container"><p class="title-main">CREATED BY YUN SEONG #1 : 📹 OBJECT TRACE</p></div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns([3, 1])
 
@@ -150,71 +145,21 @@ with col_right:
 
 # 6. 분석 엔진 실행
 if uploaded_file is not None:
-    # Save uploaded file to temp file
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
     video_path = tfile.name
 
     with col_left:
-        video_placeholder.video(video_path) # Show original video
+        video_placeholder.video(video_path)
 
     with col_right:
         if st.button("START ANALYSIS"):
             status_text.warning("ANALYZING...")
             
             cap = cv2.VideoCapture(video_path)
-            
-            # properties
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = int(cap.get(cv2.CAP_PROP_FPS))
             
-            # Output setup
             output_path = os.path.join(tempfile.gettempdir(), "output_annotated.mp4")
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
-            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-            st_frame = st.empty() # Placeholder for real-time updates
-            progress_bar = st.progress(0)
-            
-            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            curr_frame = 0
-
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                # Inference
-                results = model(frame, conf=confidence_threshold)
-                annotated_frame = results[0].plot() # YOLO built-in plotting
-
-                # Write to output video
-                out.write(annotated_frame)
-
-                # Update Video Column
-                with col_left:
-                    st_frame.image(cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB), channels="RGB", use_container_width=True)
-                
-                # Update Analytics Column
-                with col_right:
-                    obj_count = len(results[0].boxes)
-                    metric_placeholder.metric("ENTITIES_DETECTED", f"{obj_count:02d}", delta="ACTIVE")
-                
-                curr_frame += 1
-                if frame_count > 0:
-                    progress_bar.progress(min(curr_frame / frame_count, 1.0))
-
-            cap.release()
-            out.release()
-            
-            status_text.success("SUCCESS: ANALYSIS_COMPLETE")
-            
-            # Provide download button
-            with open(output_path, "rb") as file:
-                btn = st.download_button(
-                    label="DOWNLOAD_PROCESSED_VIDEO",
-                    data=file,
-                    file_name="processed_video.mp4",
-                    mime="video/mp4"
-                )
+            fourcc = cv2.VideoWriter_fourcc
