@@ -92,17 +92,24 @@ st.markdown("""
         border: 1px solid #00ffff !important;
         color: #00ffff !important;
     }
-    /* 전체 화면 커서 변경 */
-html, body, .main {
-    cursor: crosshair !important;
-}
+   /* 4. 마우스 커서 십자선 및 반전 설정 */
+    html, body, .main {
+        cursor: crosshair !important;
+    }
 
-/* 버튼이나 클릭 가능한 요소 위에서의 커서 */
-button, a, [data-testid="stFileUploadDropzone"] {
-    cursor: pointer !important;
-}
-</style>
-""", unsafe_allow_html=True)
+    /* 클릭 요소 위에 있을 때 커서 반전 효과 */
+    button, a, [data-testid="stFileUploadDropzone"], .stSlider {
+        /* 커서가 가리키는 지점의 색상을 배경과 반전시킴 */
+        mix-blend-mode: difference; 
+        cursor: crosshair !important;
+    }
+
+    /* 버튼 호버 시 스타일 강화 */
+    .stButton>button:hover {
+        background-color: #00ffff !important;
+        color: #000000 !important;
+        /* 버튼 배경이 밝아지면 커서가 검게 보임 */
+    }
 
 # 3. 모델 로드 (캐시 사용)
 @st.cache_resource
