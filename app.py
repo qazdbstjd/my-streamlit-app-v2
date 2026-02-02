@@ -11,14 +11,13 @@ st.set_page_config(page_title="Created by Yun Seong #1 : 📹OBJECT TRACE", layo
 
 # 2. 강력한 레트로 브루탈리즘 CSS 적용
 st.markdown("""
-<style>
-    /* 구글 모노스페이스 폰트 로드 */
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&display=swap');
+    <style>
+    /* 1. Source Code Pro 폰트 불러오기 */
+    @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700;900&display=swap');
 
-    /* 전체 배경 및 기본 텍스트 설정 */
-    .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-        background-color: #000000 !important;
-        font-family: 'JetBrains Mono', monospace !important;
+    /* 2. 전체 요소에 적용 */
+    html, body, [class*="css"], .main, stMarkdown, h1, p, button {
+        font-family: 'Source Code Pro', monospace !important;
     }
 
     /* 사이드바 스타일링 */
