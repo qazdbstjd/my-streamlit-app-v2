@@ -34,7 +34,7 @@ st.markdown("""
 
     /* 메인 타이틀 박스 스타일 */
     .title-container {
-        border: 4px solid #00ffff;
+        border: 2px solid #00ffff;
         padding: 20px;
         margin-bottom: 30px;
         display: inline-block;
@@ -42,7 +42,7 @@ st.markdown("""
     }
     .title-main {
         font-size: 40px !important;
-        font-weight: 900 !important;
+        font-weight: 500 !important;
         line-height: 1.2;
         margin: 0;
         color: #00ffff !important;
