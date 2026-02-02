@@ -83,7 +83,7 @@ st.markdown("""
     
     /* 구분선 */
     hr {
-        border-top: 2px double #00ffff !important;
+        border-top: 4px double #00ffff !important;
     }
 
     /* Success/Error override */
